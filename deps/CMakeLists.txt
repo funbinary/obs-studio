@@ -1,11 +1,4 @@
-if(OS_WINDOWS)
-  if(NOT MINGW)
-    add_subdirectory(w32-pthreads)
-  endif()
-  add_subdirectory(ipc-util)
-endif()
 
-add_subdirectory(blake2)
 add_subdirectory(glad)
 add_subdirectory(media-playback)
 add_subdirectory(file-updater)

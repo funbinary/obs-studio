@@ -1,3 +1,8 @@
+# setup_binary_target
+# export_target
+# export_target_pkgconf
+# install_headers
+
 # Helper function to set up runtime or library targets
 function(setup_binary_target target)
   set_target_properties(

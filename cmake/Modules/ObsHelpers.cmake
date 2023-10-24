@@ -1,29 +1,27 @@
+##########################全局函数
+# setup_binary_target
+# setup_plugin_target
+# setup_script_plugin_target
+# setup_target_resources
+# add_target_resource
+# setup_obs_app
+# setup_target_browser
+# export_target
+# define_graphic_modules
+# find_qt
+# set_option
+# obs_status
+# _install_obs_plugin_with_data
+# _install_obs_plugin
+# _install_obs_datatarget
+# legacy_check
 
 include(GNUInstallDirs)
 
-message("bin:${CMAKE_INSTALL_BINDIR}")  # bin
-message("fullbin:${CMAKE_INSTALL_FULL_BINDIR}") # /usr/local/bin
-message("sbin:${CMAKE_INSTALL_SBINDIR}")  # sbin
-message("fullsbin:${CMAKE_INSTALL_FULL_SBINDIR}") # /usr/local/sbin
-message("libexec:${CMAKE_INSTALL_LIBEXECDIR}")  # libexec
-message("full libexec:${CMAKE_INSTALL_FULL_LIBEXECDIR}") # /usr/local/libexec
-
-
-
-if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
-  include(ObsDefaults_macOS)
-  set(OS_MACOS ON)
-  set(OS_POSIX ON)
-elseif(CMAKE_SYSTEM_NAME MATCHES "Linux|FreeBSD|OpenBSD")
-  include(ObsDefaults_Linux)
-  set(OS_POSIX ON)
-  string(TOUPPER "${CMAKE_SYSTEM_NAME}" _SYSTEM_NAME_U)
-  set(OS_${_SYSTEM_NAME_U} ON)
-elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
-  include(ObsDefaults_Windows)
-  set(OS_WINDOWS ON)
-  set(OS_POSIX OFF)
-endif()
+include(ObsDefaults_Linux)
+set(OS_POSIX ON)
+string(TOUPPER "${CMAKE_SYSTEM_NAME}" _SYSTEM_NAME_U)
+set(OS_${_SYSTEM_NAME_U} ON)
 
 # Create global property to hold list of activated modules
 set_property(GLOBAL PROPERTY OBS_MODULE_LIST "")
@@ -381,13 +379,8 @@ function(obs_status status text)
   endif()
 endfunction()
 
-if(OS_WINDOWS)
-  include(ObsHelpers_Windows)
-elseif(OS_MACOS)
-  include(ObsHelpers_macOS)
-elseif(OS_POSIX)
-  include(ObsHelpers_Linux)
-endif()
+
+include(ObsHelpers_Linux)
 
 # ######################################################################################################################
 # LEGACY FALLBACKS     #
