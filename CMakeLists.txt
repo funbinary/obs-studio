@@ -1,53 +1,14 @@
 cmake_minimum_required(VERSION 3.22...3.25)
 
-if(CMAKE_HOST_SYSTEM_NAME MATCHES "(Darwin)" OR OBS_CMAKE_VERSION VERSION_GREATER_EQUAL 3.0.0)
-  include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/common/bootstrap.cmake" NO_POLICY_SCOPE)
-
-  project(obs-studio VERSION ${OBS_VERSION_CANONICAL})
-
-  if(CMAKE_SIZEOF_VOID_P EQUAL 4)
-    include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/32bit/projects.cmake")
-    return()
-  endif()
-
-  include(compilerconfig)
-  include(defaults)
-  include(helpers)
-
-  option(ENABLE_UI "Enable building with UI (requires Qt)" ON)
-  option(ENABLE_SCRIPTING "Enable scripting support" ON)
-  option(ENABLE_HEVC "Enable HEVC encoders" ON)
-
-  add_subdirectory(libobs)
-  if(OS_WINDOWS)
-    add_subdirectory(libobs-d3d11)
-    add_subdirectory(libobs-winrt)
-  endif()
-  add_subdirectory(libobs-opengl)
-  add_subdirectory(plugins)
-
-  add_subdirectory(test/test-input)
-
-  add_subdirectory(UI)
-
-  message_configuration()
-  return()
-endif()
-
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake/Modules")
 include(VersionConfig)
 
-# Prohibit in-source builds
-if("${CMAKE_BINARY_DIR}" STREQUAL "${CMAKE_SOURCE_DIR}")
-  message(FATAL_ERROR "OBS: You cannot build in a source directory (or any directory with CMakeLists.txt file). "
-                      "Please make a build subdirectory. Feel free to remove CMakeCache.txt and CMakeFiles.")
-endif()
 
 project(obs-studio VERSION ${OBS_VERSION_CANONICAL})
+# 控制是否使用目标属性将 FOLDER 目标组织到文件夹中。顶级 USE_FOLDERS CMakeLists.txt 文件末尾的值决定了行为。
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
-# Use target folders for MSVC/Xcode/etc.
-include(DeprecationHelpers)
+# 定义函数：旧的， 没啥作用
 include(ObsHelpers)
 # Set default compiler flags
 include(CompilerConfig)
@@ -95,16 +56,10 @@ endif()
 
 # OBS sources and plugins
 add_subdirectory(deps)
-add_subdirectory(libobs-opengl)
-if(OS_WINDOWS)
-  add_subdirectory(libobs-d3d11)
-  add_subdirectory(libobs-winrt)
-endif()
+
 add_subdirectory(libobs)
 add_subdirectory(plugins)
 
-# OBS main app
-add_subdirectory(UI)
 
 # Tests
 if(ENABLE_UNIT_TESTS)
@@ -114,3 +69,4 @@ endif()
 if(BUILD_TESTS OR ENABLE_UNIT_TESTS)
   add_subdirectory(test)
 endif()
+add_subdirectory(example)

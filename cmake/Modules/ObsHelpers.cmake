@@ -1,5 +1,15 @@
-# Set OS-specific constants in non-deprecated way
+
 include(GNUInstallDirs)
+
+message("bin:${CMAKE_INSTALL_BINDIR}")  # bin
+message("fullbin:${CMAKE_INSTALL_FULL_BINDIR}") # /usr/local/bin
+message("sbin:${CMAKE_INSTALL_SBINDIR}")  # sbin
+message("fullsbin:${CMAKE_INSTALL_FULL_SBINDIR}") # /usr/local/sbin
+message("libexec:${CMAKE_INSTALL_LIBEXECDIR}")  # libexec
+message("full libexec:${CMAKE_INSTALL_FULL_LIBEXECDIR}") # /usr/local/libexec
+
+
+
 if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
   include(ObsDefaults_macOS)
   set(OS_MACOS ON)

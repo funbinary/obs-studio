@@ -56,7 +56,7 @@ const char *get_module_extension(void)
 #define FLATPAK_PLUGIN_PATH "/app/plugins"
 
 static const char *module_bin[] = {
-	OBS_INSTALL_PREFIX "/" OBS_PLUGIN_DESTINATION,
+	"../../aplugins/tmp",
 	"../../obs-plugins/" BIT_STRING,
 	FLATPAK_PLUGIN_PATH "/" OBS_PLUGIN_DESTINATION,
 };
@@ -73,8 +73,8 @@ static const struct obs_nix_hotkeys_vtable *hotkeys_vtable = NULL;
 
 void add_default_module_paths(void)
 {
-	for (int i = 0; i < module_patterns_size; i++)
-		obs_add_module_path(module_bin[i], module_data[i]);
+//	for (int i = 0; i < module_patterns_size; i++)
+//		obs_add_module_path(module_bin[i], module_data[i]);
 }
 
 /*
