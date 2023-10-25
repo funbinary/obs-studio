@@ -209,8 +209,8 @@ static void *v4l2_thread(void *vptr)
 
 		/* Set timeout timevalue. */
 		tv.tv_sec = 0;
-		tv.tv_usec = timeout_usec;
-
+		tv.tv_usec = 500000;
+		blog(LOG_INFO, " timeout:%ld", tv.tv_usec);
 		r = select(data->dev + 1, &fds, NULL, NULL, &tv);
 		if (r < 0) {
 			if (errno == EINTR)
