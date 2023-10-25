@@ -505,15 +505,15 @@ int OBSImp::setupWhipPush(string &url)
 	cout << "创建rtmp service" << endl;
 	obs_data_set_string(service_settings, "server", url.c_str());
 
-	obs_data_set_int(vencoder_settings, "bitrate", 3 * 1024); // 单位是kbit
+	obs_data_set_int(vencoder_settings, "bitrate", 2500); // 单位是kbit
 	obs_data_set_string(vencoder_settings, "rate_control", "CBR");
-	obs_data_set_string(vencoder_settings, "preset", "veryfast");
+	obs_data_set_string(vencoder_settings, "preset", "ultrafast");
 	// preset
-	obs_data_set_string(vencoder_settings, "preset", "veryfast");
+	obs_data_set_string(vencoder_settings, "preset", "ultrafast");
 	//        baseline、main、high
-	obs_data_set_string(vencoder_settings, "profile", "baseline");
+	//	obs_data_set_string(vencoder_settings, "profile", "baseline");
 	// 微调
-	obs_data_set_string(vencoder_settings, "tune", "zerolatency");
+	//	obs_data_set_string(vencoder_settings, "tune", "zerolatency");
 	obs_data_set_string(vencoder_settings, "x264opts", "bframes=0");
 	obs_data_set_int(vencoder_settings, "keyint_sec", 1);
 	obs_data_set_int(aencoder_settings, "bitrate", 32);
