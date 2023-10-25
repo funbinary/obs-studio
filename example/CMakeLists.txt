@@ -1,7 +1,8 @@
 set(Obs_EXAMPLES
         obs_example
 )
-
+set(OUTPUT_DIR ${CMAKE_SOURCE_DIR}/release/bin)
+set(EXECUTABLE_OUTPUT_PATH ${CMAKE_SOURCE_DIR}/release/bin)
 find_package(Jansson MODULE REQUIRED)
 find_package(FFmpeg REQUIRED avformat avutil swscale swresample OPTIONAL_COMPONENTS avcodec)
 find_package(ZLIB REQUIRED)
@@ -15,11 +16,15 @@ find_package(xcb COMPONENTS xcb OPTIONAL_COMPONENTS xcb-xinput QUIET)
 #find_package(gio)
 find_package(Threads REQUIRED)
 
-add_executable(obs_example obs_example.cpp
+add_executable(obs_example)
+add_executable(OBS::example ALIAS obs_example)
+
+target_sources(obs_example PRIVATE obs_example.cpp
         obsimp.cpp
         obsimp.h
         const_define.h)
-TARGET_LINK_LIBRARIES(obs_example
+
+target_link_libraries(obs_example
         OBS::libobs
         OBS::caption
         OBS::uthash
@@ -35,5 +40,5 @@ TARGET_LINK_LIBRARIES(obs_example
         LibUUID::LibUUID
 )
 
-
+setup_binary_target(obs_example)
 

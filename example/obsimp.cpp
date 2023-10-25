@@ -107,7 +107,8 @@ bool OBSImp::InitOBS()
 			throw("初始化obs失败");
 		}
 		cout << "=========" << endl;
-		obs_add_module_path("obs-plugins", "data/%module%");
+		obs_add_module_path("../lib/obs-plugins",
+				    "../share/obs-plugins/%module%");
 		obs_load_all_modules();
 	}
 	cout << "init" << std::endl;
@@ -218,9 +219,19 @@ int OBSImp::AddVideoScensSource(REC_VIDEO_TYPE rec_video_type)
 				   scene_)); // 将fade_transition 和MyScene绑定
 	obs_source_release(s);
 	//创建源：显示器采集
+	setting_source_ = obs_data_create(); // 创建一个新的setting data
+	obs_data_set_string(setting_source_, "device_id", "/dev/video0");
+	obs_data_set_int(setting_source_, "input", 0);
+	obs_data_set_int(setting_source_, "standard", -1);
+	obs_data_set_int(setting_source_, "dv_timing", -1);
+	obs_data_set_int(setting_source_, "resolution", -1);
+	obs_data_set_int(setting_source_, "framerate", 30);
+	obs_data_set_int(setting_source_, "color_range", 0);
+	obs_data_set_bool(setting_source_, "auto_reset", false);
+	obs_data_set_int(setting_source_, "timeout_frames", 5);
 
-	capture_source =
-		obs_source_create("v4l2_input", "source1", NULL, nullptr);
+	capture_source = obs_source_create("v4l2_input", "source1",
+					   setting_source_, nullptr);
 
 	if (capture_source) {
 		obs_scene_atomic_update(
@@ -233,31 +244,15 @@ int OBSImp::AddVideoScensSource(REC_VIDEO_TYPE rec_video_type)
 		return -3;
 	}
 	// 设置窗口捕获原的窗口或显示器
-	setting_source_ = obs_data_create(); // 创建一个新的setting data
-	// 获取capture_source的配置数据
-	obs_data_t *curSetting = obs_source_get_settings(capture_source);
-	// 将capture_source的数据拷贝到setting_source_ 以保留
-	obs_data_apply(setting_source_, curSetting); // 保存比如显示源的设置
-	obs_data_release(curSetting);
 	if (rec_video_type == REC_VIDEO_CAMERA) {
 		//deviceID,目前是自己获取然后写死的，可写函数获取
 		const char *deviceID = "";
 		if (!camera_id_.empty()) {
 			deviceID = camera_id_[0].c_str();
 		}
-		cout << "deviceID:" << deviceID << endl;
-		obs_data_set_string(setting_source_, "device_id",
-				    "/dev/video0");
+		//		cout << "deviceID:" << deviceID << endl;
 
-		//        obs_data_set_int(setting_source_, "input", 0);
-		//        obs_data_set_int(setting_source_, "standard", -1);
-		//        obs_data_set_int(setting_source_, "dv_timing", -1);
-		//        obs_data_set_int(setting_source_, "resolution", -1);
-		//        obs_data_set_int(setting_source_, "framerate", 30);
-		//        obs_data_set_int(setting_source_, "color_range", 0);
-		//        obs_data_set_bool(setting_source_, "auto_reset", false);
-		//        obs_data_set_int(setting_source_, "timeout_frames", 5);
-		obs_source_update(capture_source, setting_source_);
+		//		obs_source_update(capture_source, setting_source_);
 	}
 	properties = obs_source_properties(
 		capture_source); // 获取属性， obs_properties_t通过链表的方式组织
