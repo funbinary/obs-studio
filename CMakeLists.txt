@@ -1,4 +1,15 @@
 cmake_minimum_required(VERSION 3.22...3.25)
+set(CMAKE_THREAD_LIBS_INIT "-lpthread")
+set(CMAKE_HAVE_THREADS_LIBRARY 1)
+set(CMAKE_USE_WIN32_THREADS_INIT 0)
+set(CMAKE_USE_PTHREADS_INIT 1)
+set(THREADS_PREFER_PTHREAD_FLAG ON)
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_C_STANDARD 17)
+set(CMAKE_C_STANDARD_REQUIRED ON)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake/Modules")
 include(VersionConfig)
@@ -45,6 +56,8 @@ setup_obs_project() # define on ObsDefaults_Linux
 add_subdirectory(deps)
 
 add_subdirectory(libobs)
+add_subdirectory(libobs-opengl)
+
 add_subdirectory(plugins)
 
 

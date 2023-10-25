@@ -6,13 +6,13 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 # CMake < 3.21 only goes up to 11, but it's mostly identical to 17 anyway.
-if (${CMAKE_VERSION} VERSION_LESS "3.21.0")
-    set(CMAKE_C_STANDARD 11)
-    set(CMAKE_C_STANDARD_REQUIRED ON)
-else ()
-    set(CMAKE_C_STANDARD 17)
-    set(CMAKE_C_STANDARD_REQUIRED ON)
-endif ()
+#if (${CMAKE_VERSION} VERSION_LESS "3.21.0")
+set(CMAKE_C_STANDARD 17)
+set(CMAKE_C_STANDARD_REQUIRED ON)
+#else ()
+#    set(CMAKE_C_STANDARD 17)
+#    set(CMAKE_C_STANDARD_REQUIRED ON)
+#endif ()
 
 # Set compile options for MSVC
 find_program(CCACHE_PROGRAM "ccache")
