@@ -270,7 +270,7 @@ function(export_target target)
             ${CMAKE_CURRENT_SOURCE_DIR}/cmake/${target}Config.cmake.in ${CMAKE_CURRENT_BINARY_DIR}/${target}Config.cmake
             INSTALL_DESTINATION ${OBS_CMAKE_DESTINATION}/${target}
             PATH_VARS OBS_PLUGIN_DESTINATION OBS_DATA_DESTINATION)
-    message(${CMAKE_CURRENT_BINARY_DIR}/${target}ConfigVersion.cmake)
+    message(${OBS_VERSION_CANONICAL})
     write_basic_package_version_file(
             ${CMAKE_CURRENT_BINARY_DIR}/${target}ConfigVersion.cmake
             VERSION ${OBS_VERSION_CANONICAL}
