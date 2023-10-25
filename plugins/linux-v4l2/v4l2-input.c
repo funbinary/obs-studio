@@ -215,7 +215,8 @@ static void *v4l2_thread(void *vptr)
 		if (r < 0) {
 			if (errno == EINTR)
 				continue;
-			blog(LOG_ERROR, "%s: select failed", data->device_id);
+			blog(LOG_ERROR, "%s: select failed %s", data->device_id,
+			     strerror(errno));
 			break;
 		} else if (r == 0) {
 			blog(LOG_ERROR, "%s: select timed out",
