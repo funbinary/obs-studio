@@ -216,9 +216,9 @@ static void *v4l2_thread(void *vptr)
 			if (errno == EINTR)
 				continue;
 			blog(LOG_ERROR,
-			     "%s: select failed , errnostr:%s errno: %d fd: %ld",
-			     data->device_id, strerror(errno), errno,
-			     data->dev);
+			     "%s: select failed , errnostr:%s errno: %d fd: %ld timeout:%ld",
+			     data->device_id, strerror(errno), errno, data->dev,
+			     tv.tv_usec);
 			break;
 		} else if (r == 0) {
 			blog(LOG_ERROR, "%s: select timed out",
