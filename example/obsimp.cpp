@@ -514,7 +514,7 @@ int OBSImp::setupWhipPush(string &url)
 	//	obs_data_set_string(vencoder_settings, "tune", "zerolatency");
 	obs_data_set_string(vencoder_settings, "x264opts", "bframes=0");
 	obs_data_set_int(vencoder_settings, "keyint_sec", 1);
-	obs_data_set_int(aencoder_settings, "bitrate", 32);
+	obs_data_set_int(aencoder_settings, "bitrate", 1);
 	obs_service_update(service, service_settings);
 	obs_service_apply_encoder_settings(service, vencoder_settings,
 					   aencoder_settings);
