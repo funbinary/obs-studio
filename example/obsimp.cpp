@@ -413,7 +413,7 @@ int OBSImp::resetVideo()
 	ovi.colorspace = VIDEO_CS_709;
 	ovi.range = VIDEO_RANGE_PARTIAL;
 	ovi.adapter = 0;
-	ovi.gpu_conversion = true;
+	ovi.gpu_conversion = false;
 	ovi.scale_type = OBS_SCALE_BICUBIC;
 	int ret = obs_reset_video(&ovi);
 	cout << "obs_reset_video ret:" << ret << endl;
