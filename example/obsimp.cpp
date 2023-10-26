@@ -417,6 +417,7 @@ int OBSImp::resetVideo()
 	ovi.scale_type = OBS_SCALE_BICUBIC;
 	int ret = obs_reset_video(&ovi);
 	cout << "obs_reset_video ret:" << ret << endl;
+	cout << "====================" << endl;
 	return ret;
 }
 
