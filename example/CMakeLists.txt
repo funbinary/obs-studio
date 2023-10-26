@@ -1,8 +1,8 @@
 set(Obs_EXAMPLES
         obs_example
 )
-#set(OUTPUT_DIR ${CMAKE_SOURCE_DIR}/release/bin)
-#set(EXECUTABLE_OUTPUT_PATH ${CMAKE_SOURCE_DIR}/release/bin)
+set(OUTPUT_DIR ${CMAKE_SOURCE_DIR}/release/bin)
+set(EXECUTABLE_OUTPUT_PATH ${CMAKE_SOURCE_DIR}/release/bin)
 find_package(Jansson MODULE REQUIRED)
 find_package(FFmpeg REQUIRED avformat avutil swscale swresample OPTIONAL_COMPONENTS avcodec)
 find_package(ZLIB REQUIRED)

@@ -45,7 +45,7 @@ option(LINUX_PORTABLE "Build portable version (Linux)" OFF)
 option(USE_XDG "Utilize XDG Base Directory Specification (Linux)" ON)
 option(ENABLE_PULSEAUDIO "Enable PulseAudio support" ON)
 if (OS_LINUX)
-    option(ENABLE_WAYLAND "Enable building with support for Wayland (Linux)" ON)
+    option(ENABLE_WAYLAND "Enable building with support for Wayland (Linux)" OFF)
 endif ()
 
 

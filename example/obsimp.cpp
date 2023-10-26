@@ -409,11 +409,11 @@ int OBSImp::resetVideo()
 	//    ovi.output_height = 1080;
 	ovi.output_width = 1280;
 	ovi.output_height = 720;
-	ovi.output_format = VIDEO_FORMAT_I420; // 视频输出格式YUV420P
+	ovi.output_format = VIDEO_FORMAT_NV12; // 视频输出格式YUV420P
 	ovi.colorspace = VIDEO_CS_709;
 	ovi.range = VIDEO_RANGE_PARTIAL;
 	ovi.adapter = 0;
-	ovi.gpu_conversion = false;
+	ovi.gpu_conversion = true;
 	ovi.scale_type = OBS_SCALE_BICUBIC;
 	int ret = obs_reset_video(&ovi);
 	cout << "obs_reset_video ret:" << ret << endl;
