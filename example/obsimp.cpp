@@ -258,7 +258,7 @@ int OBSImp::AddVideoScensSource(REC_VIDEO_TYPE rec_video_type)
 		//        obs_data_set_int(setting_source_, "standard", -1);
 		//        obs_data_set_int(setting_source_, "dv_timing", -1);
 		//        obs_data_set_int(setting_source_, "resolution", -1);
-		//        obs_data_set_int(setting_source_, "framerate", 30);
+		obs_data_set_int(setting_source_, "framerate", 2);
 		//        obs_data_set_int(setting_source_, "color_range", 0);
 		//        obs_data_set_bool(setting_source_, "auto_reset", false);
 		//        obs_data_set_int(setting_source_, "timeout_frames", 5);
@@ -504,17 +504,17 @@ int OBSImp::setupWhipPush(string &url)
 	// 创建service
 	cout << "创建rtmp service" << endl;
 	obs_data_set_string(service_settings, "server", url.c_str());
-
-	obs_data_set_int(vencoder_settings, "bitrate", 528); // 单位是kbit
+	cout << "528" << endl;
+	obs_data_set_int(vencoder_settings, "bitrate", 1024); // 单位是kbit
 	obs_data_set_string(vencoder_settings, "rate_control", "CBR");
-	obs_data_set_string(vencoder_settings, "preset", "slow");
+	obs_data_set_string(vencoder_settings, "preset", "ultrafast");
 	//        baseline、main、high
 	//	obs_data_set_string(vencoder_settings, "profile", "baseline");
 	// 微调
-	//	obs_data_set_string(vencoder_settings, "tune", "zerolatency");
+	obs_data_set_string(vencoder_settings, "tune", "zerolatency");
 	obs_data_set_string(vencoder_settings, "x264opts", "bframes=0");
 	obs_data_set_int(vencoder_settings, "keyint_sec", 1);
-	obs_data_set_int(aencoder_settings, "bitrate", 1);
+	obs_data_set_int(aencoder_settings, "bitrate", 64);
 	obs_service_update(service, service_settings);
 	obs_service_apply_encoder_settings(service, vencoder_settings,
 					   aencoder_settings);
