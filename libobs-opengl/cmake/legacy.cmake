@@ -54,8 +54,9 @@ elseif(OS_POSIX)
   target_link_libraries(libobs-opengl PRIVATE XCB::XCB X11::X11_xcb)
 
   set_target_properties(libobs-opengl PROPERTIES PREFIX "")
-
+  message("ENABLE_WAYLAND:${ENABLE_WAYLAND}")
   if(ENABLE_WAYLAND)
+    message("ENABLE_WAYLAND================================")
     find_package(
       OpenGL
       COMPONENTS EGL
