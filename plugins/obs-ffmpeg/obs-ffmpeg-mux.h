@@ -1,7 +1,6 @@
 #pragma once
 
 #include <obs-module.h>
-#include <obs-hotkey.h>
 #include <util/circlebuf.h>
 #include <util/darray.h>
 #include <util/dstr.h>
@@ -34,7 +33,6 @@ struct ffmpeg_muxer {
 	/* replay buffer */
 	int64_t save_ts;
 	int keyframes;
-	obs_hotkey_id hotkey;
 	volatile bool muxing;
 	mux_packets_t mux_packets;
 

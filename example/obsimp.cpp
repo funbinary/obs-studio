@@ -47,6 +47,7 @@ static inline bool HasAudioDevices(const char *source_id)
 	obs_properties_destroy(props);
 	return count != 0;
 }
+
 void ResetAudioDevice(const char *sourceId, const char *deviceId,
 		      const char *deviceDesc, int channel)
 {
@@ -72,8 +73,7 @@ void ResetAudioDevice(const char *sourceId, const char *deviceId,
 	} else if (!disable) {
 		settings = obs_data_create();
 		obs_data_set_string(settings, "device_id", deviceId);
-		source = obs_source_create(sourceId, deviceDesc, settings,
-					   nullptr);
+		source = obs_source_create(sourceId, deviceDesc, settings);
 		obs_data_release(settings);
 		obs_set_output_source(channel, source);
 		obs_source_release(source);
@@ -85,13 +85,14 @@ static bool CreateAACEncoder(OBSEncoder &res, string &id, const char *name,
 {
 	cout << id << endl;
 	const char *id_ = "ffmpeg_aac";
-	res = obs_audio_encoder_create(id_, name, nullptr, idx, nullptr);
+	res = obs_audio_encoder_create(id_, name, nullptr, idx);
 	if (res) {
 		obs_encoder_release(res);
 		return true;
 	}
 	return false;
 }
+
 OBSImp::OBSImp() {}
 
 OBSImp::~OBSImp() {}
@@ -106,7 +107,6 @@ bool OBSImp::InitOBS()
 		if (!obs_startup("zh-CN", cfg_path.c_str(), NULL)) {
 			throw("初始化obs失败");
 		}
-		cout << "=========" << endl;
 		obs_add_module_path("../lib/obs-plugins",
 				    "../share/obs/obs-plugins/%module%");
 		//		obs_add_module_path(
@@ -224,8 +224,7 @@ int OBSImp::AddVideoScensSource(REC_VIDEO_TYPE rec_video_type)
 	obs_source_release(s);
 	//创建源：显示器采集
 
-	capture_source =
-		obs_source_create("v4l2_input", "source1", NULL, nullptr);
+	capture_source = obs_source_create("v4l2_input", "source1", nullptr);
 
 	if (capture_source) {
 		obs_scene_atomic_update(
@@ -425,9 +424,8 @@ bool OBSImp::createOutputMode()
 {
 	if (!file_output_) {
 		//高级输出 ffmpeg
-		file_output_ = obs_output_create("ffmpeg_output",
-						 "simple_ffmpeg_output",
-						 nullptr, nullptr);
+		file_output_ = obs_output_create(
+			"ffmpeg_output", "simple_ffmpeg_output", nullptr);
 		if (!file_output_) {
 			throw "Failed to create recording FFmpeg output "
 			      "(simple output)";
@@ -486,12 +484,11 @@ int OBSImp::setupLocalRecord(string &file_name)
 
 int OBSImp::setupWhipPush(string &url)
 {
-	OBSEncoder vencoder = obs_video_encoder_create("obs_x264", "test_x264",
-						       nullptr, nullptr);
-	OBSEncoder aencoder = obs_audio_encoder_create(
-		"ffmpeg_opus", "test_opus", nullptr, 0, nullptr);
-	service = obs_service_create("whip_custom", "simple_stream", nullptr,
-				     nullptr);
+	OBSEncoder vencoder =
+		obs_video_encoder_create("obs_x264", "test_x264", nullptr);
+	OBSEncoder aencoder = obs_audio_encoder_create("ffmpeg_opus",
+						       "test_opus", nullptr, 0);
+	service = obs_service_create("whip_custom", "simple_stream", nullptr);
 	cout << __FUNCTION__ << " service " << service
 	     << ", url: " << url.c_str() << endl;
 	if (!service) {
@@ -524,8 +521,8 @@ int OBSImp::setupWhipPush(string &url)
 	auto output_type = "whip_output";
 
 	cout << "创建whip output" << endl;
-	streamingOutput = obs_output_create(output_type, "simple_stream",
-					    nullptr, nullptr);
+	streamingOutput =
+		obs_output_create(output_type, "simple_stream", nullptr);
 	if (!streamingOutput) {
 		cout << "obs_output_create whip output failed" << endl;
 		return -1;
@@ -563,12 +560,11 @@ int OBSImp::setupWhipPush(string &url)
 
 int OBSImp::setupRtmpPush(string &url)
 {
-	OBSEncoder vencoder = obs_video_encoder_create("obs_x264", "test_x264",
-						       nullptr, nullptr);
-	OBSEncoder aencoder = obs_audio_encoder_create("ffmpeg_aac", "test_aac",
-						       nullptr, 0, nullptr);
-	service = obs_service_create("rtmp_common", "simple_stream", nullptr,
-				     nullptr);
+	OBSEncoder vencoder =
+		obs_video_encoder_create("obs_x264", "test_x264", nullptr);
+	OBSEncoder aencoder =
+		obs_audio_encoder_create("ffmpeg_aac", "test_aac", nullptr, 0);
+	service = obs_service_create("rtmp_common", "simple_stream", nullptr);
 	cout << __FUNCTION__ << " service " << service
 	     << ", url: " << url.c_str() << endl;
 	if (!service) {
@@ -606,8 +602,8 @@ int OBSImp::setupRtmpPush(string &url)
 	auto output_type = "rtmp_output";
 
 	cout << "创建rtmp output" << endl;
-	streamingOutput = obs_output_create(output_type, "simple_stream",
-					    nullptr, nullptr);
+	streamingOutput =
+		obs_output_create(output_type, "simple_stream", nullptr);
 	if (!streamingOutput) {
 		cout << "obs_output_create rtmp output failed" << endl;
 		return -1;

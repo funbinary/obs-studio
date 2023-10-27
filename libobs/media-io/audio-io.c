@@ -382,7 +382,7 @@ int audio_output_open(audio_t **audio, struct audio_output_info *info)
 	memcpy(&out->info, info, sizeof(struct audio_output_info));
 	out->channels = get_audio_channels(info->speakers);
 	out->planes = planar ? out->channels : 1;
-	out->input_cb = info->input_callback;
+	out->input_cb = info->input_callback; // audio_callback
 	out->input_param = info->input_param;
 	out->block_size = (planar ? 1 : out->channels) *
 			  get_audio_bytes_per_channel(info->format);

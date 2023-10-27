@@ -118,11 +118,10 @@ static const char *source_signals[] = {
 };
 
 bool obs_source_init_context(struct obs_source *source, obs_data_t *settings,
-			     const char *name, const char *uuid,
-			     obs_data_t *hotkey_data, bool private)
+			     const char *name, const char *uuid, bool private)
 {
 	if (!obs_context_data_init(&source->context, OBS_OBJ_TYPE_SOURCE,
-				   settings, name, uuid, hotkey_data, private))
+				   settings, name, uuid, private))
 		return false;
 
 	return signal_handler_add_array(source->context.signals,
@@ -253,101 +252,10 @@ static void obs_source_init_finalize(struct obs_source *source)
 				     &obs->data.sources);
 }
 
-static bool obs_source_hotkey_mute(void *data, obs_hotkey_pair_id id,
-				   obs_hotkey_t *key, bool pressed)
-{
-	UNUSED_PARAMETER(id);
-	UNUSED_PARAMETER(key);
-
-	struct obs_source *source = data;
-
-	if (!pressed || obs_source_muted(source))
-		return false;
-
-	obs_source_set_muted(source, true);
-	return true;
-}
-
-static bool obs_source_hotkey_unmute(void *data, obs_hotkey_pair_id id,
-				     obs_hotkey_t *key, bool pressed)
-{
-	UNUSED_PARAMETER(id);
-	UNUSED_PARAMETER(key);
-
-	struct obs_source *source = data;
-
-	if (!pressed || !obs_source_muted(source))
-		return false;
-
-	obs_source_set_muted(source, false);
-	return true;
-}
-
-static void obs_source_hotkey_push_to_mute(void *data, obs_hotkey_id id,
-					   obs_hotkey_t *key, bool pressed)
-{
-	struct audio_action action = {.timestamp = os_gettime_ns(),
-				      .type = AUDIO_ACTION_PTM,
-				      .set = pressed};
-
-	UNUSED_PARAMETER(id);
-	UNUSED_PARAMETER(key);
-
-	struct obs_source *source = data;
-
-	pthread_mutex_lock(&source->audio_actions_mutex);
-	da_push_back(source->audio_actions, &action);
-	pthread_mutex_unlock(&source->audio_actions_mutex);
-
-	source->user_push_to_mute_pressed = pressed;
-}
-
-static void obs_source_hotkey_push_to_talk(void *data, obs_hotkey_id id,
-					   obs_hotkey_t *key, bool pressed)
-{
-	struct audio_action action = {.timestamp = os_gettime_ns(),
-				      .type = AUDIO_ACTION_PTT,
-				      .set = pressed};
-
-	UNUSED_PARAMETER(id);
-	UNUSED_PARAMETER(key);
-
-	struct obs_source *source = data;
-
-	pthread_mutex_lock(&source->audio_actions_mutex);
-	da_push_back(source->audio_actions, &action);
-	pthread_mutex_unlock(&source->audio_actions_mutex);
-
-	source->user_push_to_talk_pressed = pressed;
-}
-
-static void obs_source_init_audio_hotkeys(struct obs_source *source)
-{
-	if (!(source->info.output_flags & OBS_SOURCE_AUDIO) ||
-	    source->info.type != OBS_SOURCE_TYPE_INPUT) {
-		source->mute_unmute_key = OBS_INVALID_HOTKEY_ID;
-		source->push_to_talk_key = OBS_INVALID_HOTKEY_ID;
-		return;
-	}
-
-	source->mute_unmute_key = obs_hotkey_pair_register_source(
-		source, "libobs.mute", obs->hotkeys.mute, "libobs.unmute",
-		obs->hotkeys.unmute, obs_source_hotkey_mute,
-		obs_source_hotkey_unmute, source, source);
-
-	source->push_to_mute_key = obs_hotkey_register_source(
-		source, "libobs.push-to-mute", obs->hotkeys.push_to_mute,
-		obs_source_hotkey_push_to_mute, source);
-
-	source->push_to_talk_key = obs_hotkey_register_source(
-		source, "libobs.push-to-talk", obs->hotkeys.push_to_talk,
-		obs_source_hotkey_push_to_talk, source);
-}
-
 static obs_source_t *
 obs_source_create_internal(const char *id, const char *name, const char *uuid,
-			   obs_data_t *settings, obs_data_t *hotkey_data,
-			   bool private, uint32_t last_obs_ver)
+			   obs_data_t *settings, bool private,
+			   uint32_t last_obs_ver)
 {
 	struct obs_source *source = bzalloc(sizeof(struct obs_source));
 
@@ -369,13 +277,9 @@ obs_source_create_internal(const char *id, const char *name, const char *uuid,
 		private = true;
 	}
 
-	source->mute_unmute_key = OBS_INVALID_HOTKEY_PAIR_ID;
-	source->push_to_mute_key = OBS_INVALID_HOTKEY_ID;
-	source->push_to_talk_key = OBS_INVALID_HOTKEY_ID;
 	source->last_obs_ver = last_obs_ver;
 
-	if (!obs_source_init_context(source, settings, name, uuid, hotkey_data,
-				     private))
+	if (!obs_source_init_context(source, settings, name, uuid, private))
 		goto fail;
 
 	if (info) {
@@ -390,9 +294,6 @@ obs_source_create_internal(const char *id, const char *name, const char *uuid,
 
 	if (!obs_source_init(source))
 		goto fail;
-
-	if (!private)
-		obs_source_init_audio_hotkeys(source);
 
 	/* allow the source to be created even if creation fails so that the
 	 * user's data doesn't become lost */
@@ -422,28 +323,27 @@ fail:
 }
 
 obs_source_t *obs_source_create(const char *id, const char *name,
-				obs_data_t *settings, obs_data_t *hotkey_data)
+				obs_data_t *settings)
 {
-	return obs_source_create_internal(id, name, NULL, settings, hotkey_data,
-					  false, LIBOBS_API_VER);
+	return obs_source_create_internal(id, name, NULL, settings, false,
+					  LIBOBS_API_VER);
 }
 
 obs_source_t *obs_source_create_private(const char *id, const char *name,
 					obs_data_t *settings)
 {
-	return obs_source_create_internal(id, name, NULL, settings, NULL, true,
+	return obs_source_create_internal(id, name, NULL, settings, true,
 					  LIBOBS_API_VER);
 }
 
 obs_source_t *obs_source_create_set_last_ver(const char *id, const char *name,
 					     const char *uuid,
 					     obs_data_t *settings,
-					     obs_data_t *hotkey_data,
 					     uint32_t last_obs_ver,
 					     bool is_private)
 {
-	return obs_source_create_internal(id, name, uuid, settings, hotkey_data,
-					  is_private, last_obs_ver);
+	return obs_source_create_internal(id, name, uuid, settings, is_private,
+					  last_obs_ver);
 }
 
 static char *get_new_filter_name(obs_source_t *dst, const char *name)
@@ -576,7 +476,7 @@ obs_source_t *obs_source_duplicate(obs_source_t *source, const char *new_name,
 			     ? obs_source_create_private(source->info.id,
 							 new_name, settings)
 			     : obs_source_create(source->info.id, new_name,
-						 settings, NULL);
+						 settings);
 
 	new_source->audio_mixers = source->audio_mixers;
 	new_source->sync_offset = source->sync_offset;
@@ -695,10 +595,6 @@ static void obs_source_destroy_defer(struct obs_source *source)
 	     source->context.private ? "private " : "", source->context.name);
 
 	audio_monitor_destroy(source->monitor);
-
-	obs_hotkey_unregister(source->push_to_talk_key);
-	obs_hotkey_unregister(source->push_to_mute_key);
-	obs_hotkey_pair_unregister(source->mute_unmute_key);
 
 	for (i = 0; i < source->async_cache.num; i++)
 		obs_source_frame_decref(source->async_cache.array[i].frame);

@@ -77,7 +77,6 @@ typedef struct obs_weak_service obs_weak_service_t;
 #include "obs-output.h"
 #include "obs-service.h"
 #include "obs-audio-controls.h"
-#include "obs-hotkey.h"
 
 /**
  * @file
@@ -114,14 +113,14 @@ enum obs_allow_direct_render {
 	OBS_NO_DIRECT_RENDERING,
 	OBS_ALLOW_DIRECT_RENDERING,
 };
-
+// 缩放算法
 enum obs_scale_type {
-	OBS_SCALE_DISABLE,
-	OBS_SCALE_POINT,
-	OBS_SCALE_BICUBIC,
-	OBS_SCALE_BILINEAR,
-	OBS_SCALE_LANCZOS,
-	OBS_SCALE_AREA,
+	OBS_SCALE_DISABLE,  // 禁用缩放算法
+	OBS_SCALE_POINT,    //最近邻插值算法
+	OBS_SCALE_BICUBIC,  //双三次插值算法
+	OBS_SCALE_BILINEAR, //双线性插值算法
+	OBS_SCALE_LANCZOS,  //Lanczos插值算法
+	OBS_SCALE_AREA,     //区域插值算法
 };
 
 enum obs_blending_method {
@@ -1017,8 +1016,7 @@ EXPORT const char *obs_source_get_display_name(const char *id);
  * or modifying video/audio.  Use obs_source_release to release it.
  */
 EXPORT obs_source_t *obs_source_create(const char *id, const char *name,
-				       obs_data_t *settings,
-				       obs_data_t *hotkey_data);
+				       obs_data_t *settings);
 
 EXPORT obs_source_t *obs_source_create_private(const char *id, const char *name,
 					       obs_data_t *settings);
@@ -2028,8 +2026,7 @@ EXPORT const char *obs_output_get_display_name(const char *id);
  * directshow, or other custom outputs.
  */
 EXPORT obs_output_t *obs_output_create(const char *id, const char *name,
-				       obs_data_t *settings,
-				       obs_data_t *hotkey_data);
+				       obs_data_t *settings);
 
 /**
  * Adds/releases a reference to an output.  When the last reference is
@@ -2371,8 +2368,7 @@ EXPORT const char *obs_encoder_get_display_name(const char *id);
  * @return           The video encoder context, or NULL if failed or not found.
  */
 EXPORT obs_encoder_t *obs_video_encoder_create(const char *id, const char *name,
-					       obs_data_t *settings,
-					       obs_data_t *hotkey_data);
+					       obs_data_t *settings);
 
 /**
  * Creates an audio encoder context
@@ -2385,8 +2381,7 @@ EXPORT obs_encoder_t *obs_video_encoder_create(const char *id, const char *name,
  */
 EXPORT obs_encoder_t *obs_audio_encoder_create(const char *id, const char *name,
 					       obs_data_t *settings,
-					       size_t mixer_idx,
-					       obs_data_t *hotkey_data);
+					       size_t mixer_idx);
 
 /**
  * Adds/releases a reference to an encoder.  When the last reference is
@@ -2570,8 +2565,7 @@ EXPORT uint64_t obs_encoder_get_pause_offset(const obs_encoder_t *encoder);
 EXPORT const char *obs_service_get_display_name(const char *id);
 
 EXPORT obs_service_t *obs_service_create(const char *id, const char *name,
-					 obs_data_t *settings,
-					 obs_data_t *hotkey_data);
+					 obs_data_t *settings);
 
 EXPORT obs_service_t *obs_service_create_private(const char *id,
 						 const char *name,

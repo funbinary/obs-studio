@@ -110,12 +110,6 @@ struct slideshow {
 
 	enum behavior behavior;
 
-	obs_hotkey_id play_pause_hotkey;
-	obs_hotkey_id restart_hotkey;
-	obs_hotkey_id stop_hotkey;
-	obs_hotkey_id next_hotkey;
-	obs_hotkey_id prev_hotkey;
-
 	enum obs_media_state state;
 };
 
@@ -578,72 +572,6 @@ static void ss_previous_slide(void *data)
 	do_transition(ss, false);
 }
 
-static void play_pause_hotkey(void *data, obs_hotkey_id id,
-			      obs_hotkey_t *hotkey, bool pressed)
-{
-	UNUSED_PARAMETER(id);
-	UNUSED_PARAMETER(hotkey);
-
-	struct slideshow *ss = data;
-
-	if (pressed && obs_source_showing(ss->source))
-		obs_source_media_play_pause(ss->source, !ss->paused);
-}
-
-static void restart_hotkey(void *data, obs_hotkey_id id, obs_hotkey_t *hotkey,
-			   bool pressed)
-{
-	UNUSED_PARAMETER(id);
-	UNUSED_PARAMETER(hotkey);
-
-	struct slideshow *ss = data;
-
-	if (pressed && obs_source_showing(ss->source))
-		obs_source_media_restart(ss->source);
-}
-
-static void stop_hotkey(void *data, obs_hotkey_id id, obs_hotkey_t *hotkey,
-			bool pressed)
-{
-	UNUSED_PARAMETER(id);
-	UNUSED_PARAMETER(hotkey);
-
-	struct slideshow *ss = data;
-
-	if (pressed && obs_source_showing(ss->source))
-		obs_source_media_stop(ss->source);
-}
-
-static void next_slide_hotkey(void *data, obs_hotkey_id id,
-			      obs_hotkey_t *hotkey, bool pressed)
-{
-	UNUSED_PARAMETER(id);
-	UNUSED_PARAMETER(hotkey);
-
-	struct slideshow *ss = data;
-
-	if (!ss->manual)
-		return;
-
-	if (pressed && obs_source_showing(ss->source))
-		obs_source_media_next(ss->source);
-}
-
-static void previous_slide_hotkey(void *data, obs_hotkey_id id,
-				  obs_hotkey_t *hotkey, bool pressed)
-{
-	UNUSED_PARAMETER(id);
-	UNUSED_PARAMETER(hotkey);
-
-	struct slideshow *ss = data;
-
-	if (!ss->manual)
-		return;
-
-	if (pressed && obs_source_showing(ss->source))
-		obs_source_media_previous(ss->source);
-}
-
 static void current_slide_proc(void *data, calldata_t *cd)
 {
 	struct slideshow *ss = data;
@@ -677,27 +605,6 @@ static void *ss_create(obs_data_t *settings, obs_source_t *source)
 	ss->manual = false;
 	ss->paused = false;
 	ss->stop = false;
-
-	ss->play_pause_hotkey = obs_hotkey_register_source(
-		source, "SlideShow.PlayPause",
-		obs_module_text("SlideShow.PlayPause"), play_pause_hotkey, ss);
-
-	ss->restart_hotkey = obs_hotkey_register_source(
-		source, "SlideShow.Restart",
-		obs_module_text("SlideShow.Restart"), restart_hotkey, ss);
-
-	ss->stop_hotkey = obs_hotkey_register_source(
-		source, "SlideShow.Stop", obs_module_text("SlideShow.Stop"),
-		stop_hotkey, ss);
-
-	ss->next_hotkey = obs_hotkey_register_source(
-		source, "SlideShow.NextSlide",
-		obs_module_text("SlideShow.NextSlide"), next_slide_hotkey, ss);
-
-	ss->prev_hotkey = obs_hotkey_register_source(
-		source, "SlideShow.PreviousSlide",
-		obs_module_text("SlideShow.PreviousSlide"),
-		previous_slide_hotkey, ss);
 
 	proc_handler_add(ph, "void current_index(out int current_index)",
 			 current_slide_proc, ss);

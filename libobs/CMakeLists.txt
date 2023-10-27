@@ -39,10 +39,6 @@ target_sources(
         obs-encoder.c
         obs-encoder.h
         obs-ffmpeg-compat.h
-        obs-hotkey-name-map.c
-        obs-hotkey.c
-        obs-hotkey.h
-        obs-hotkeys.h
         obs-interaction.h
         obs-internal.h
         obs-missing-files.c
@@ -277,8 +273,6 @@ set(public_headers
         obs-data.h
         obs-defs.h
         obs-encoder.h
-        obs-hotkey.h
-        obs-hotkeys.h
         obs-interaction.h
         obs-internal.h
         obs-missing-files.h

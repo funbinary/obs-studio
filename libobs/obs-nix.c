@@ -73,8 +73,8 @@ static const struct obs_nix_hotkeys_vtable *hotkeys_vtable = NULL;
 
 void add_default_module_paths(void)
 {
-//	for (int i = 0; i < module_patterns_size; i++)
-//		obs_add_module_path(module_bin[i], module_data[i]);
+	//	for (int i = 0; i < module_patterns_size; i++)
+	//		obs_add_module_path(module_bin[i], module_data[i]);
 }
 
 /*
@@ -403,85 +403,4 @@ void log_system_info(void)
 #endif
 	if (obs_get_nix_platform() == OBS_NIX_PLATFORM_X11_EGL)
 		obs_nix_x11_log_info();
-}
-
-bool obs_hotkeys_platform_init(struct obs_core_hotkeys *hotkeys)
-{
-	switch (obs_get_nix_platform()) {
-	case OBS_NIX_PLATFORM_X11_EGL:
-		hotkeys_vtable = obs_nix_x11_get_hotkeys_vtable();
-		break;
-#ifdef ENABLE_WAYLAND
-	case OBS_NIX_PLATFORM_WAYLAND:
-		hotkeys_vtable = obs_nix_wayland_get_hotkeys_vtable();
-		break;
-#endif
-	default:
-		break;
-	}
-
-	return hotkeys_vtable->init(hotkeys);
-}
-
-void obs_hotkeys_platform_free(struct obs_core_hotkeys *hotkeys)
-{
-	hotkeys_vtable->free(hotkeys);
-	hotkeys_vtable = NULL;
-}
-
-bool obs_hotkeys_platform_is_pressed(obs_hotkeys_platform_t *context,
-				     obs_key_t key)
-{
-	return hotkeys_vtable->is_pressed(context, key);
-}
-
-void obs_key_to_str(obs_key_t key, struct dstr *dstr)
-{
-	return hotkeys_vtable->key_to_str(key, dstr);
-}
-
-obs_key_t obs_key_from_virtual_key(int sym)
-{
-	return hotkeys_vtable->key_from_virtual_key(sym);
-}
-
-int obs_key_to_virtual_key(obs_key_t key)
-{
-	return hotkeys_vtable->key_to_virtual_key(key);
-}
-
-static inline void add_combo_key(obs_key_t key, struct dstr *str)
-{
-	struct dstr key_str = {0};
-
-	obs_key_to_str(key, &key_str);
-
-	if (!dstr_is_empty(&key_str)) {
-		if (!dstr_is_empty(str)) {
-			dstr_cat(str, " + ");
-		}
-		dstr_cat_dstr(str, &key_str);
-	}
-
-	dstr_free(&key_str);
-}
-
-void obs_key_combination_to_str(obs_key_combination_t combination,
-				struct dstr *str)
-{
-	if ((combination.modifiers & INTERACT_CONTROL_KEY) != 0) {
-		add_combo_key(OBS_KEY_CONTROL, str);
-	}
-	if ((combination.modifiers & INTERACT_COMMAND_KEY) != 0) {
-		add_combo_key(OBS_KEY_META, str);
-	}
-	if ((combination.modifiers & INTERACT_ALT_KEY) != 0) {
-		add_combo_key(OBS_KEY_ALT, str);
-	}
-	if ((combination.modifiers & INTERACT_SHIFT_KEY) != 0) {
-		add_combo_key(OBS_KEY_SHIFT, str);
-	}
-	if (combination.key != OBS_KEY_NONE) {
-		add_combo_key(combination.key, str);
-	}
 }

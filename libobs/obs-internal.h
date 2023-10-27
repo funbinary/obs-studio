@@ -145,66 +145,8 @@ static inline bool check_path(const char *data, const char *path,
 }
 
 /* ------------------------------------------------------------------------- */
-/* hotkeys */
-
-struct obs_hotkey {
-	obs_hotkey_id id;
-	char *name;
-	char *description;
-
-	obs_hotkey_func func;
-	void *data;
-	int pressed;
-
-	obs_hotkey_registerer_t registerer_type;
-	void *registerer;
-
-	obs_hotkey_id pair_partner_id;
-
-	UT_hash_handle hh;
-};
-
-struct obs_hotkey_pair {
-	obs_hotkey_pair_id pair_id;
-	obs_hotkey_id id[2];
-	obs_hotkey_active_func func[2];
-	bool pressed0;
-	bool pressed1;
-	void *data[2];
-
-	UT_hash_handle hh;
-};
-
-typedef struct obs_hotkey_pair obs_hotkey_pair_t;
-
-typedef struct obs_hotkeys_platform obs_hotkeys_platform_t;
-
-void *obs_hotkey_thread(void *param);
-
-struct obs_core_hotkeys;
-bool obs_hotkeys_platform_init(struct obs_core_hotkeys *hotkeys);
-void obs_hotkeys_platform_free(struct obs_core_hotkeys *hotkeys);
-bool obs_hotkeys_platform_is_pressed(obs_hotkeys_platform_t *context,
-				     obs_key_t key);
-
-const char *obs_get_hotkey_translation(obs_key_t key, const char *def);
 
 struct obs_context_data;
-void obs_hotkeys_context_release(struct obs_context_data *context);
-
-void obs_hotkeys_free(void);
-
-struct obs_hotkey_binding {
-	obs_key_combination_t key;
-	bool pressed;
-	bool modifiers_match;
-
-	obs_hotkey_id hotkey_id;
-	obs_hotkey_t *hotkey;
-};
-
-struct obs_hotkey_name_map_item;
-void obs_hotkey_name_map_free(void);
 
 /* ------------------------------------------------------------------------- */
 /* views */
@@ -426,41 +368,6 @@ struct obs_core_data {
 	DARRAY(obs_source_t *) sources_to_tick;
 };
 
-/* user hotkeys */
-struct obs_core_hotkeys {
-	pthread_mutex_t mutex;
-	obs_hotkey_t *hotkeys;
-	obs_hotkey_id next_id;
-	obs_hotkey_pair_t *hotkey_pairs;
-	obs_hotkey_pair_id next_pair_id;
-
-	pthread_t hotkey_thread;
-	bool hotkey_thread_initialized;
-	os_event_t *stop_event;
-	bool thread_disable_press;
-	bool strict_modifiers;
-	bool reroute_hotkeys;
-	DARRAY(obs_hotkey_binding_t) bindings;
-
-	obs_hotkey_callback_router_func router_func;
-	void *router_func_data;
-
-	obs_hotkeys_platform_t *platform_context;
-
-	pthread_once_t name_map_init_token;
-	struct obs_hotkey_name_map_item *name_map;
-
-	signal_handler_t *signals;
-
-	char *translations[OBS_KEY_LAST_VALUE];
-	char *mute;
-	char *unmute;
-	char *push_to_mute;
-	char *push_to_talk;
-	char *sceneitem_show;
-	char *sceneitem_hide;
-};
-
 typedef DARRAY(struct obs_source_info) obs_source_info_array_t;
 
 struct obs_core {
@@ -488,10 +395,9 @@ struct obs_core {
 
 	/* segmented into multiple sub-structures to keep things a bit more
 	 * clean and organized */
-	struct obs_core_video video;
-	struct obs_core_audio audio;
-	struct obs_core_data data;
-	struct obs_core_hotkeys hotkeys;
+	struct obs_core_video video; //视频对象
+	struct obs_core_audio audio; //音频对象
+	struct obs_core_data data;   // 用户源,输出的通道，displays
 
 	os_task_queue_t *destruction_task_thread;
 
@@ -562,10 +468,6 @@ struct obs_context_data {
 	struct obs_weak_object *control;
 	obs_destroy_cb destroy;
 
-	DARRAY(obs_hotkey_id) hotkeys;
-	DARRAY(obs_hotkey_pair_id) hotkey_pairs;
-	obs_data_t *hotkey_data;
-
 	DARRAY(char *) rename_cache;
 	pthread_mutex_t rename_cache_mutex;
 
@@ -582,7 +484,7 @@ struct obs_context_data {
 extern bool obs_context_data_init(struct obs_context_data *context,
 				  enum obs_obj_type type, obs_data_t *settings,
 				  const char *name, const char *uuid,
-				  obs_data_t *hotkey_data, bool private);
+				  bool private);
 extern void obs_context_init_control(struct obs_context_data *context,
 				     void *object, obs_destroy_cb destroy);
 extern void obs_context_data_free(struct obs_context_data *context);
@@ -829,10 +731,6 @@ struct obs_source {
 	bool rendering_filter;
 	bool filter_bypass_active;
 
-	/* sources specific hotkeys */
-	obs_hotkey_pair_id mute_unmute_key;
-	obs_hotkey_id push_to_mute_key;
-	obs_hotkey_id push_to_talk_key;
 	bool push_to_mute_enabled;
 	bool push_to_mute_pressed;
 	bool user_push_to_mute_pressed;
@@ -883,8 +781,7 @@ extern struct obs_source_info *get_source_info2(const char *unversioned_id,
 						uint32_t ver);
 extern bool obs_source_init_context(struct obs_source *source,
 				    obs_data_t *settings, const char *name,
-				    const char *uuid, obs_data_t *hotkey_data,
-				    bool private);
+				    const char *uuid, bool private);
 
 extern bool obs_transition_init(obs_source_t *transition);
 extern void obs_transition_free(obs_source_t *transition);
@@ -902,8 +799,7 @@ extern void audio_monitor_destroy(struct audio_monitor *monitor);
 extern obs_source_t *
 obs_source_create_set_last_ver(const char *id, const char *name,
 			       const char *uuid, obs_data_t *settings,
-			       obs_data_t *hotkey_data, uint32_t last_obs_ver,
-			       bool is_private);
+			       uint32_t last_obs_ver, bool is_private);
 extern void obs_source_destroy(struct obs_source *source);
 
 enum view_type {

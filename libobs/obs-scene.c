@@ -32,8 +32,6 @@ static void get_ungrouped_transform(obs_sceneitem_t *group, struct vec2 *pos,
 				    struct vec2 *scale, float *rot);
 static inline bool crop_enabled(const struct obs_sceneitem_crop *crop);
 static inline bool item_texture_enabled(const struct obs_scene_item *item);
-static void init_hotkeys(obs_scene_t *scene, obs_sceneitem_t *item,
-			 const char *name);
 
 typedef DARRAY(struct obs_scene_item *) obs_scene_item_ptr_array_t;
 
@@ -1589,7 +1587,7 @@ const struct obs_source_info group_info = {
 
 static inline obs_scene_t *create_id(const char *id, const char *name)
 {
-	struct obs_source *source = obs_source_create(id, name, NULL, NULL);
+	struct obs_source *source = obs_source_create(id, name, NULL);
 	return source->context.data;
 }
 
@@ -1648,8 +1646,7 @@ static inline obs_source_t *new_ref(obs_source_t *source)
 
 static inline void duplicate_item_data(struct obs_scene_item *dst,
 				       struct obs_scene_item *src,
-				       bool defer_texture_update,
-				       bool duplicate_hotkeys)
+				       bool defer_texture_update)
 {
 	struct obs_scene *dst_scene = dst->parent;
 
@@ -1691,20 +1688,15 @@ static inline void duplicate_item_data(struct obs_scene_item *dst,
 	dst->show_transition_duration = src->show_transition_duration;
 	dst->hide_transition_duration = src->hide_transition_duration;
 
-	if (duplicate_hotkeys && !dst_scene->source->context.private) {
+	if (!dst_scene->source->context.private) {
 		struct dstr show = {0};
 		struct dstr hide = {0};
 		obs_data_array_t *data0 = NULL;
 		obs_data_array_t *data1 = NULL;
 
-		obs_hotkey_pair_save(src->toggle_visibility, &data0, &data1);
-		obs_hotkey_pair_load(dst->toggle_visibility, data0, data1);
-
 		/* Fix scene item ID */
 		dstr_printf(&show, "libobs.show_scene_item.%" PRIi64, dst->id);
 		dstr_printf(&hide, "libobs.hide_scene_item.%" PRIi64, dst->id);
-		obs_hotkey_pair_set_names(dst->toggle_visibility, show.array,
-					  hide.array);
 
 		obs_data_array_release(data0);
 		obs_data_array_release(data1);
@@ -1780,7 +1772,7 @@ obs_scene_t *obs_scene_duplicate(obs_scene_t *scene, const char *name,
 				continue;
 			}
 
-			duplicate_item_data(new_item, item, false, false);
+			duplicate_item_data(new_item, item, false);
 
 			obs_source_release(source);
 		}
@@ -1985,107 +1977,10 @@ static obs_sceneitem_t *sceneitem_get_ref(obs_sceneitem_t *si)
 	return NULL;
 }
 
-static bool hotkey_show_sceneitem(void *data, obs_hotkey_pair_id id,
-				  obs_hotkey_t *hotkey, bool pressed)
-{
-	UNUSED_PARAMETER(id);
-	UNUSED_PARAMETER(hotkey);
-
-	obs_sceneitem_t *si = sceneitem_get_ref(data);
-	if (pressed && si && !si->user_visible) {
-		obs_sceneitem_set_visible(si, true);
-		obs_sceneitem_release(si);
-		return true;
-	}
-
-	obs_sceneitem_release(si);
-	return false;
-}
-
-static bool hotkey_hide_sceneitem(void *data, obs_hotkey_pair_id id,
-				  obs_hotkey_t *hotkey, bool pressed)
-{
-	UNUSED_PARAMETER(id);
-	UNUSED_PARAMETER(hotkey);
-
-	obs_sceneitem_t *si = sceneitem_get_ref(data);
-	if (pressed && si && si->user_visible) {
-		obs_sceneitem_set_visible(si, false);
-		obs_sceneitem_release(si);
-		return true;
-	}
-
-	obs_sceneitem_release(si);
-	return false;
-}
-
-static void init_hotkeys(obs_scene_t *scene, obs_sceneitem_t *item,
-			 const char *name)
-{
-	struct obs_data_array *hotkey_array;
-	obs_data_t *hotkey_data = scene->source->context.hotkey_data;
-
-	struct dstr show = {0};
-	struct dstr hide = {0};
-	struct dstr legacy = {0};
-	struct dstr show_desc = {0};
-	struct dstr hide_desc = {0};
-
-	dstr_printf(&show, "libobs.show_scene_item.%" PRIi64, item->id);
-	dstr_printf(&hide, "libobs.hide_scene_item.%" PRIi64, item->id);
-
-	dstr_copy(&show_desc, obs->hotkeys.sceneitem_show);
-	dstr_replace(&show_desc, "%1", name);
-	dstr_copy(&hide_desc, obs->hotkeys.sceneitem_hide);
-	dstr_replace(&hide_desc, "%1", name);
-
-	/* Check if legacy keys exists, migrate if necessary */
-	dstr_printf(&legacy, "libobs.show_scene_item.%s", name);
-	hotkey_array = obs_data_get_array(hotkey_data, legacy.array);
-	if (hotkey_array)
-		obs_data_set_array(hotkey_data, show.array, hotkey_array);
-
-	dstr_printf(&legacy, "libobs.hide_scene_item.%s", name);
-	hotkey_array = obs_data_get_array(hotkey_data, legacy.array);
-	if (hotkey_array)
-		obs_data_set_array(hotkey_data, hide.array, hotkey_array);
-
-	item->toggle_visibility = obs_hotkey_pair_register_source(
-		scene->source, show.array, show_desc.array, hide.array,
-		hide_desc.array, hotkey_show_sceneitem, hotkey_hide_sceneitem,
-		item, item);
-
-	dstr_free(&show);
-	dstr_free(&hide);
-	dstr_free(&legacy);
-	dstr_free(&show_desc);
-	dstr_free(&hide_desc);
-}
-
-static void sceneitem_rename_hotkey(const obs_sceneitem_t *scene_item,
-				    const char *new_name)
-{
-	struct dstr show_desc = {0};
-	struct dstr hide_desc = {0};
-
-	dstr_copy(&show_desc, obs->hotkeys.sceneitem_show);
-	dstr_replace(&show_desc, "%1", new_name);
-	dstr_copy(&hide_desc, obs->hotkeys.sceneitem_hide);
-	dstr_replace(&hide_desc, "%1", new_name);
-
-	obs_hotkey_pair_set_descriptions(scene_item->toggle_visibility,
-					 show_desc.array, hide_desc.array);
-
-	dstr_free(&show_desc);
-	dstr_free(&hide_desc);
-}
-
 static void sceneitem_renamed(void *param, calldata_t *data)
 {
 	obs_sceneitem_t *scene_item = param;
 	const char *name = calldata_string(data, "new_name");
-
-	sceneitem_rename_hotkey(scene_item, name);
 }
 
 static inline bool source_has_audio(obs_source_t *source)
@@ -2143,7 +2038,6 @@ static obs_sceneitem_t *obs_scene_add_internal(obs_scene_t *scene,
 	item->locked = false;
 	item->is_group = strcmp(source->info.id, group_info.id) == 0;
 	item->private_settings = obs_data_create();
-	item->toggle_visibility = OBS_INVALID_HOTKEY_PAIR_ID;
 	os_atomic_set_long(&item->active_refs, 1);
 	vec2_set(&item->scale, 1.0f, 1.0f);
 	matrix4_identity(&item->draw_transform);
@@ -2179,9 +2073,6 @@ static obs_sceneitem_t *obs_scene_add_internal(obs_scene_t *scene,
 	}
 
 	full_unlock(scene);
-
-	if (!scene->source->context.private)
-		init_hotkeys(scene, item, obs_source_get_name(source));
 
 	signal_handler_connect(obs_source_get_signal_handler(source), "rename",
 			       sceneitem_renamed, item);
@@ -2219,7 +2110,6 @@ static void obs_sceneitem_destroy(obs_sceneitem_t *item)
 			obs_leave_graphics();
 		}
 		obs_data_release(item->private_settings);
-		obs_hotkey_pair_unregister(item->toggle_visibility);
 		pthread_mutex_destroy(&item->actions_mutex);
 		signal_handler_disconnect(
 			obs_source_get_signal_handler(item->source), "rename",
@@ -3452,7 +3342,7 @@ void obs_sceneitem_group_ungroup(obs_sceneitem_t *item)
 		remove_group_transform(item, last);
 		dst = obs_scene_add_internal(scene, last->source, insert_after,
 					     0);
-		duplicate_item_data(dst, last, true, true);
+		duplicate_item_data(dst, last, true);
 		apply_group_transform(last, item);
 
 		if (!last->next)
@@ -3627,22 +3517,6 @@ get_sceneitem_parent_group(obs_scene_t *scene, obs_sceneitem_t *group_subitem)
 	return NULL;
 }
 
-static void obs_sceneitem_move_hotkeys(obs_scene_t *parent,
-				       obs_sceneitem_t *item)
-{
-	obs_data_array_t *data0 = NULL;
-	obs_data_array_t *data1 = NULL;
-
-	obs_hotkey_pair_save(item->toggle_visibility, &data0, &data1);
-	obs_hotkey_pair_unregister(item->toggle_visibility);
-
-	init_hotkeys(parent, item, obs_source_get_name(item->source));
-	obs_hotkey_pair_load(item->toggle_visibility, data0, data1);
-
-	obs_data_array_release(data0);
-	obs_data_array_release(data1);
-}
-
 bool obs_scene_reorder_items2(obs_scene_t *scene,
 			      struct obs_sceneitem_order_info *item_order,
 			      size_t item_order_size)
@@ -3701,9 +3575,6 @@ bool obs_scene_reorder_items2(obs_scene_t *scene,
 				if (!sub_scene->first_item)
 					sub_scene->first_item = sub_item;
 
-				/* Move hotkeys into group */
-				obs_sceneitem_move_hotkeys(sub_scene, sub_item);
-
 				sub_item->prev = sub_prev;
 				sub_item->next = NULL;
 				sub_item->parent = sub_scene;
@@ -3721,10 +3592,6 @@ bool obs_scene_reorder_items2(obs_scene_t *scene,
 			full_unlock(sub_scene);
 			obs_scene_release(sub_scene);
 		}
-
-		/* Move item hotkeys out of group */
-		if (item->parent && obs_scene_is_group(item->parent))
-			obs_sceneitem_move_hotkeys(scene, item);
 
 		item->prev = prev;
 		item->next = NULL;

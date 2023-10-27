@@ -1122,11 +1122,6 @@ static const char *obs_signals[] = {
 
 	"void channel_change(int channel, in out ptr source, ptr prev_source)",
 
-	"void hotkey_layout_change()",
-	"void hotkey_register(ptr hotkey)",
-	"void hotkey_unregister(ptr hotkey)",
-	"void hotkey_bindings_changed(ptr hotkey)",
-
 	NULL,
 };
 
@@ -1141,78 +1136,6 @@ static inline bool obs_init_handlers(void)
 		return false;
 
 	return signal_handler_add_array(obs->signals, obs_signals);
-}
-
-static pthread_once_t obs_pthread_once_init_token = PTHREAD_ONCE_INIT;
-static inline bool obs_init_hotkeys(void)
-{
-	struct obs_core_hotkeys *hotkeys = &obs->hotkeys;
-	bool success = false;
-
-	assert(hotkeys != NULL);
-
-	hotkeys->hotkeys = NULL;
-	hotkeys->hotkey_pairs = NULL;
-	hotkeys->signals = obs->signals;
-	hotkeys->name_map_init_token = obs_pthread_once_init_token;
-	hotkeys->mute = bstrdup("Mute");
-	hotkeys->unmute = bstrdup("Unmute");
-	hotkeys->push_to_mute = bstrdup("Push-to-mute");
-	hotkeys->push_to_talk = bstrdup("Push-to-talk");
-	hotkeys->sceneitem_show = bstrdup("Show '%1'");
-	hotkeys->sceneitem_hide = bstrdup("Hide '%1'");
-
-	if (!obs_hotkeys_platform_init(hotkeys))
-		return false;
-
-	if (pthread_mutex_init_recursive(&hotkeys->mutex) != 0)
-		goto fail;
-
-	if (os_event_init(&hotkeys->stop_event, OS_EVENT_TYPE_MANUAL) != 0)
-		goto fail;
-	if (pthread_create(&hotkeys->hotkey_thread, NULL, obs_hotkey_thread,
-			   NULL))
-		goto fail;
-
-	hotkeys->strict_modifiers = true;
-	hotkeys->hotkey_thread_initialized = true;
-
-	success = true;
-
-fail:
-	return success;
-}
-
-static inline void stop_hotkeys(void)
-{
-	struct obs_core_hotkeys *hotkeys = &obs->hotkeys;
-	void *thread_ret;
-
-	if (hotkeys->hotkey_thread_initialized) {
-		os_event_signal(hotkeys->stop_event);
-		pthread_join(hotkeys->hotkey_thread, &thread_ret);
-		hotkeys->hotkey_thread_initialized = false;
-	}
-
-	os_event_destroy(hotkeys->stop_event);
-	obs_hotkeys_free();
-}
-
-static inline void obs_free_hotkeys(void)
-{
-	struct obs_core_hotkeys *hotkeys = &obs->hotkeys;
-
-	bfree(hotkeys->mute);
-	bfree(hotkeys->unmute);
-	bfree(hotkeys->push_to_mute);
-	bfree(hotkeys->push_to_talk);
-	bfree(hotkeys->sceneitem_show);
-	bfree(hotkeys->sceneitem_hide);
-
-	obs_hotkey_name_map_free();
-
-	obs_hotkeys_platform_free(hotkeys);
-	pthread_mutex_destroy(&hotkeys->mutex);
 }
 
 extern const struct obs_source_info scene_info;
@@ -1256,8 +1179,6 @@ static bool obs_init(const char *locale, const char *module_config_path,
 	if (!obs_init_data())
 		return false;
 	if (!obs_init_handlers())
-		return false;
-	if (!obs_init_hotkeys())
 		return false;
 
 	obs->destruction_task_thread = os_task_queue_create();
@@ -1426,7 +1347,6 @@ void obs_shutdown(void)
 
 	stop_video();
 	stop_audio();
-	stop_hotkeys();
 
 	module = obs->first_module;
 	while (module) {
@@ -1440,7 +1360,6 @@ void obs_shutdown(void)
 	obs_free_audio();
 	obs_free_video();
 	os_task_queue_destroy(obs->destruction_task_thread);
-	obs_free_hotkeys();
 	obs_free_graphics();
 	proc_handler_destroy(obs->procs);
 	signal_handler_destroy(obs->signals);
@@ -1600,7 +1519,7 @@ bool obs_reset_audio2(const struct obs_audio_info2 *oai)
 	/* don't allow changing of audio settings if active. */
 	if (!obs || (audio->audio && audio_output_active(audio->audio)))
 		return false;
-
+	// 重置obs->audio
 	obs_free_audio();
 	if (!oai)
 		return true;
@@ -2318,7 +2237,6 @@ static obs_source_t *obs_load_source_type(obs_data_t *source_data,
 	const char *id = obs_data_get_string(source_data, "id");
 	const char *v_id = obs_data_get_string(source_data, "versioned_id");
 	obs_data_t *settings = obs_data_get_obj(source_data, "settings");
-	obs_data_t *hotkeys = obs_data_get_obj(source_data, "hotkeys");
 	double volume;
 	double balance;
 	int64_t sync;
@@ -2336,14 +2254,12 @@ static obs_source_t *obs_load_source_type(obs_data_t *source_data,
 		v_id = id;
 
 	source = obs_source_create_set_last_ver(v_id, name, uuid, settings,
-						hotkeys, prev_ver, is_private);
+						prev_ver, is_private);
 
 	if (source->owns_info_id) {
 		bfree((void *)source->info.unversioned_id);
 		source->info.unversioned_id = bstrdup(id);
 	}
-
-	obs_data_release(hotkeys);
 
 	caps = obs_source_get_output_flags(source);
 
@@ -2503,8 +2419,6 @@ obs_data_t *obs_save_source(obs_source_t *source)
 	obs_data_array_t *filters = obs_data_array_create();
 	obs_data_t *source_data = obs_data_create();
 	obs_data_t *settings = obs_source_get_settings(source);
-	obs_data_t *hotkey_data = source->context.hotkey_data;
-	obs_data_t *hotkeys;
 	float volume = obs_source_get_volume(source);
 	float balance = obs_source_get_balance_value(source);
 	uint32_t mixers = obs_source_get_audio_mixers(source);
@@ -2525,13 +2439,6 @@ obs_data_t *obs_save_source(obs_source_t *source)
 	int di_order = (int)obs_source_get_deinterlace_field_order(source);
 
 	obs_source_save(source);
-	hotkeys = obs_hotkeys_save_source(source);
-
-	if (hotkeys) {
-		obs_data_release(hotkey_data);
-		source->context.hotkey_data = hotkeys;
-		hotkey_data = hotkeys;
-	}
 
 	obs_data_set_int(source_data, "prev_ver", LIBOBS_API_VER);
 
@@ -2551,7 +2458,6 @@ obs_data_t *obs_save_source(obs_source_t *source)
 	obs_data_set_int(source_data, "push-to-mute-delay", ptm_delay);
 	obs_data_set_bool(source_data, "push-to-talk", push_to_talk);
 	obs_data_set_int(source_data, "push-to-talk-delay", ptt_delay);
-	obs_data_set_obj(source_data, "hotkeys", hotkey_data);
 	obs_data_set_int(source_data, "deinterlace_mode", di_mode);
 	obs_data_set_int(source_data, "deinterlace_field_order", di_order);
 	obs_data_set_int(source_data, "monitoring_type", m_type);
@@ -2669,11 +2575,11 @@ static inline char *dup_name(const char *name, bool private)
 	}
 }
 
-static inline bool
-obs_context_data_init_wrap(struct obs_context_data *context,
-			   enum obs_obj_type type, obs_data_t *settings,
-			   const char *name, const char *uuid,
-			   obs_data_t *hotkey_data, bool private)
+static inline bool obs_context_data_init_wrap(struct obs_context_data *context,
+					      enum obs_obj_type type,
+					      obs_data_t *settings,
+					      const char *name,
+					      const char *uuid, bool private)
 {
 	assert(context);
 	memset(context, 0, sizeof(*context));
@@ -2700,17 +2606,15 @@ obs_context_data_init_wrap(struct obs_context_data *context,
 
 	context->name = dup_name(name, private);
 	context->settings = obs_data_newref(settings);
-	context->hotkey_data = obs_data_newref(hotkey_data);
 	return true;
 }
 
 bool obs_context_data_init(struct obs_context_data *context,
 			   enum obs_obj_type type, obs_data_t *settings,
-			   const char *name, const char *uuid,
-			   obs_data_t *hotkey_data, bool private)
+			   const char *name, const char *uuid, bool private)
 {
 	if (obs_context_data_init_wrap(context, type, settings, name, uuid,
-				       hotkey_data, private)) {
+				       private)) {
 		return true;
 	} else {
 		obs_context_data_free(context);
@@ -2720,7 +2624,6 @@ bool obs_context_data_init(struct obs_context_data *context,
 
 void obs_context_data_free(struct obs_context_data *context)
 {
-	obs_hotkeys_context_release(context);
 	signal_handler_destroy(context->signals);
 	proc_handler_destroy(context->procs);
 	obs_data_release(context->settings);

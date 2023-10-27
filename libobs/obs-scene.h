@@ -73,9 +73,7 @@ struct obs_scene_item {
 	enum obs_bounds_type bounds_type;
 	uint32_t bounds_align;
 	struct vec2 bounds;
-
-	obs_hotkey_pair_id toggle_visibility;
-
+	
 	obs_data_t *private_settings;
 
 	pthread_mutex_t actions_mutex;

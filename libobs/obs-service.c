@@ -38,7 +38,6 @@ const char *obs_service_get_display_name(const char *id)
 static obs_service_t *obs_service_create_internal(const char *id,
 						  const char *name,
 						  obs_data_t *settings,
-						  obs_data_t *hotkey_data,
 						  bool private)
 {
 	const struct obs_service_info *info = find_service(id);
@@ -52,8 +51,7 @@ static obs_service_t *obs_service_create_internal(const char *id,
 	service = bzalloc(sizeof(struct obs_service));
 
 	if (!obs_context_data_init(&service->context, OBS_OBJ_TYPE_SERVICE,
-				   settings, name, NULL, hotkey_data,
-				   private)) {
+				   settings, name, NULL, private)) {
 		bfree(service);
 		return NULL;
 	}
@@ -74,16 +72,15 @@ static obs_service_t *obs_service_create_internal(const char *id,
 }
 
 obs_service_t *obs_service_create(const char *id, const char *name,
-				  obs_data_t *settings, obs_data_t *hotkey_data)
+				  obs_data_t *settings)
 {
-	return obs_service_create_internal(id, name, settings, hotkey_data,
-					   false);
+	return obs_service_create_internal(id, name, settings, false);
 }
 
 obs_service_t *obs_service_create_private(const char *id, const char *name,
 					  obs_data_t *settings)
 {
-	return obs_service_create_internal(id, name, settings, NULL, true);
+	return obs_service_create_internal(id, name, settings, true);
 }
 
 static void actually_destroy_service(struct obs_service *service)

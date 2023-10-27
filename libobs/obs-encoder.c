@@ -46,7 +46,7 @@ const char *obs_encoder_get_display_name(const char *id)
 }
 
 static bool init_encoder(struct obs_encoder *encoder, const char *name,
-			 obs_data_t *settings, obs_data_t *hotkey_data)
+			 obs_data_t *settings)
 {
 	pthread_mutex_init_value(&encoder->init_mutex);
 	pthread_mutex_init_value(&encoder->callbacks_mutex);
@@ -54,7 +54,7 @@ static bool init_encoder(struct obs_encoder *encoder, const char *name,
 	pthread_mutex_init_value(&encoder->pause.mutex);
 
 	if (!obs_context_data_init(&encoder->context, OBS_OBJ_TYPE_ENCODER,
-				   settings, name, NULL, hotkey_data, false))
+				   settings, name, NULL, false))
 		return false;
 	if (pthread_mutex_init_recursive(&encoder->init_mutex) != 0)
 		return false;
@@ -78,7 +78,7 @@ static bool init_encoder(struct obs_encoder *encoder, const char *name,
 
 static struct obs_encoder *
 create_encoder(const char *id, enum obs_encoder_type type, const char *name,
-	       obs_data_t *settings, size_t mixer_idx, obs_data_t *hotkey_data)
+	       obs_data_t *settings, size_t mixer_idx)
 {
 	struct obs_encoder *encoder;
 	struct obs_encoder_info *ei = find_encoder(id);
@@ -102,7 +102,7 @@ create_encoder(const char *id, enum obs_encoder_type type, const char *name,
 		encoder->orig_info = *ei;
 	}
 
-	success = init_encoder(encoder, name, settings, hotkey_data);
+	success = init_encoder(encoder, name, settings);
 	if (!success) {
 		blog(LOG_ERROR, "creating encoder '%s' (%s) failed", name, id);
 		obs_encoder_destroy(encoder);
@@ -123,23 +123,19 @@ create_encoder(const char *id, enum obs_encoder_type type, const char *name,
 }
 
 obs_encoder_t *obs_video_encoder_create(const char *id, const char *name,
-					obs_data_t *settings,
-					obs_data_t *hotkey_data)
+					obs_data_t *settings)
 {
 	if (!name || !id)
 		return NULL;
-	return create_encoder(id, OBS_ENCODER_VIDEO, name, settings, 0,
-			      hotkey_data);
+	return create_encoder(id, OBS_ENCODER_VIDEO, name, settings, 0);
 }
 
 obs_encoder_t *obs_audio_encoder_create(const char *id, const char *name,
-					obs_data_t *settings, size_t mixer_idx,
-					obs_data_t *hotkey_data)
+					obs_data_t *settings, size_t mixer_idx)
 {
 	if (!name || !id)
 		return NULL;
-	return create_encoder(id, OBS_ENCODER_AUDIO, name, settings, mixer_idx,
-			      hotkey_data);
+	return create_encoder(id, OBS_ENCODER_AUDIO, name, settings, mixer_idx);
 }
 
 static void receive_video(void *param, struct video_data *frame);

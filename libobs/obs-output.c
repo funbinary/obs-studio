@@ -155,10 +155,10 @@ static const char *output_signals[] = {
 };
 
 static bool init_output_handlers(struct obs_output *output, const char *name,
-				 obs_data_t *settings, obs_data_t *hotkey_data)
+				 obs_data_t *settings)
 {
 	if (!obs_context_data_init(&output->context, OBS_OBJ_TYPE_OUTPUT,
-				   settings, name, NULL, hotkey_data, false))
+				   settings, name, NULL, false))
 		return false;
 
 	signal_handler_add_array(output->context.signals, output_signals);
@@ -166,7 +166,7 @@ static bool init_output_handlers(struct obs_output *output, const char *name,
 }
 
 obs_output_t *obs_output_create(const char *id, const char *name,
-				obs_data_t *settings, obs_data_t *hotkey_data)
+				obs_data_t *settings)
 {
 	const struct obs_output_info *info = find_output(id);
 	struct obs_output *output;
@@ -188,7 +188,7 @@ obs_output_t *obs_output_create(const char *id, const char *name,
 		goto fail;
 	if (os_event_init(&output->stopping_event, OS_EVENT_TYPE_MANUAL) != 0)
 		goto fail;
-	if (!init_output_handlers(output, name, settings, hotkey_data))
+	if (!init_output_handlers(output, name, settings))
 		goto fail;
 
 	os_event_signal(output->stopping_event);
